@@ -25,26 +25,35 @@ class BibTeXHandler:
     def __init__(self, io):
         self.io = io
 
-    def create_bibtex_data(self, data: dict):
+    def create_bibtex_data(self, entries: list[tuple[int, str, str, str | None, int | None, str | None]]):
         """
-        Muodostetaan BibTeX-sisältö datan perusteella.
-        Datassa pitää olla vähintäänkin type ja key.
+        Create BibTeX data from database entries (rows)
         """
-        self.validate(data)
 
-        type = data["type"]
-        key = data["key"]
+        # self.validate(data) # TODO: DOESNT WORK
 
-        content = ""
-        for key in data:
-            # Käsitellään kaikki kentät paitsi key ja lähteen type
-            if key not in ["type", "key"]:
-                content += f"    {key} = {{{data[key]}}},\n"
+        output = ""
 
-        return f"""@{type}{{{key}\n{content}}}"""
+        # DB keys
+        keys = ["id", "author", "title", "journal", "year", "doi"]
+
+        for entry in entries:
+            type = "book"
+            id = entry[0]
+
+            content = ""
+            for i in range(1, len(entry)):
+                key = keys[i]
+                value = entry[i]
+                content += f"    {key} = {{{value}}},\n"
+
+            output += f"""@{type}{{{id}\n{content}}}\n"""
+
+        return output
 
     def validate(self, data: dict):
         """
+        TODO TODO TODO
         Validoidaan data,
         esim. key:ssa ei saa olla välilyöntejä tms.
         """
@@ -54,7 +63,7 @@ class BibTeXHandler:
 
     def save_to_file(self, filepath: str, bibtex_data: str):
         """
-        Tallennetaan BibTeX-muotoinen data tiedostoon.
+        Saves the data to a file.
         """
         self.io.write_file(bibtex_data, filepath)
 
@@ -69,8 +78,17 @@ if __name__ == "__main__":
         "journal": "tiedelehti",
         "year": 2027,
     }
+    """
+    init_database()
 
+    db = OhtuDatabase()
     io = IOHandler()
     handler = BibTeXHandler(io)
-    bibtex = handler.create_bibtex_data(data)
-    print(bibtex)
+
+    viittaukset = db.get_references()
+    # for viittaus in viittaukset:
+    #     print(viittaus)
+
+    bibtex = handler.create_bibtex_data(viittaukset)
+    io.console_print(bibtex)
+    """
